@@ -74,7 +74,8 @@ order by 2,3
 WITH PopvsVac (Continent, location, date, population, new_vaccinations, RollingPeopleVacsed)
 as
 (
-SELECT dea.continent, dea.location, dea.date, dea.population, vac.new_vaccinations, SUM(cast(vac.new_vaccinations as bigint)) OVER (Partition BY dea.location order by dea.location, dea.date) as RollingPeopleVacsed 
+SELECT dea.continent, dea.location, dea.date, dea.population, vac.new_vaccinations,
+SUM(cast(vac.new_vaccinations as bigint)) OVER (Partition BY dea.location order by dea.location, dea.date) as RollingPeopleVacsed 
 from PortfolioProject..CovidDeaths dea
 join PortfolioProject..CovidVaccinations vac
 	on dea.location = vac.location
@@ -82,13 +83,13 @@ join PortfolioProject..CovidVaccinations vac
 WHERE dea.continent is not null
 --order by 2,3
 )
-SELECT *, (RollingPeopleVacsed/population)/100
+SELECT *, (RollingPeopleVacsed/population)/100 as Total_vaccinated_percent
 From PopvsVac
 
 --temp table
 
-drop table if exists #PercentPopVacsed
-Create Table #PercentPopVacsed
+drop table if exists PercentPopVacsed
+Create Table PercentPopVacsed
 (
 Continent nvarchar(255),
 Location nvarchar(255),
@@ -97,18 +98,17 @@ population numeric,
 New_vaccinations numeric,
 RollingPeopleVacsed numeric
 )
-Insert Into #PercentPopVacsed
-SELECT dea.continent, dea.location, dea.date, dea.population, vac.new_vaccinations, SUM(cast(vac.new_vaccinations as bigint)) OVER (Partition BY dea.location order by dea.location, dea.date) as RollingPeopleVacsed 
+Insert Into PercentPopVacsed
+SELECT dea.continent, dea.location, dea.date, dea.population, vac.new_vaccinations,
+SUM(cast(vac.new_vaccinations as bigint)) OVER (Partition BY dea.location order by dea.location, dea.date) as RollingPeopleVacsed 
 from PortfolioProject..CovidDeaths dea
 join PortfolioProject..CovidVaccinations vac
 	on dea.location = vac.location
 	and dea.date = vac.date
 --WHERE dea.continent is not null
 --order by 2,3
-
-SELECT *, (RollingPeopleVacsed/population)*100
-From #PercentPopVacsed
-
+SELECT *, (RollingPeopleVacsed/population)*100 as Total_vaccinated_percent
+From PercentPopVacsed
 
 -- creating View to store data for later visualizing 
 CREATE VIEW PercentOfVacsed as 
